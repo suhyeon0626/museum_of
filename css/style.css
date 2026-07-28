@@ -1,0 +1,180 @@
+/* ==========================================================================
+   my-homepage - 전체 공통 및 페이지별 스타일시트
+   - PRD 기획서에 명시된 페이지별 색상 테마 및 레이아웃 정의
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 기본 리셋 및 글로벌 변수 (CSS Variables)
+   -------------------------------------------------------------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* 메인 폰트 설정 */
+  --font-main: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* [기획서 반영] 페이지별 테마 색상 정의 */
+  /* 메인 페이지: 남색/검은색 톤 */
+  --color-main-bg: #0b132b;
+  --color-main-text: #ffffff;
+  --color-main-card: #1c2541;
+
+  /* 귀여운 것: 밝은 노란색/연두색 톤 */
+  --color-cute-bg: #fffde7;
+  --color-cute-accent: #c0ca33;
+  --color-cute-text: #333333;
+
+  /* 멋진 것: 검은색 및 밤하늘 느낌 */
+  --color-great-bg: #090a0f;
+  --color-great-text: #e0e6ed;
+  --color-great-accent: #4a90e2;
+
+  /* 노트: 연노랑색 실제 노트 느낌 */
+  --color-note-bg: #fef9e7;
+  --color-note-line: #e6dfc8;
+  --color-note-text: #4a4a4a;
+}
+
+body {
+  font-family: var(--font-main);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-main-bg);
+  color: var(--color-main-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* --------------------------------------------------------------------------
+   2. 공통 헤더 & 푸터 레이아웃
+   -------------------------------------------------------------------------- */
+#site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: rgba(11, 19, 43, 0.9);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-logo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.nav-menu {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav-menu a {
+  color: #d1d5db;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.nav-menu a:hover,
+.nav-menu a.active {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+#site-footer {
+  margin-top: auto;
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+  background-color: rgba(0, 0, 0, 0.3);
+  color: #888888;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* --------------------------------------------------------------------------
+   3. 메인 콘텐츠 구조 영역
+   -------------------------------------------------------------------------- */
+main {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.page-description {
+  text-align: center;
+  margin-bottom: 2rem;
+  opacity: 0.85;
+}
+
+/* --------------------------------------------------------------------------
+   4. 페이지별 전용 테마 바인딩
+   -------------------------------------------------------------------------- */
+
+/* [메인 페이지] */
+body.theme-main {
+  background-color: var(--color-main-bg);
+  color: var(--color-main-text);
+}
+
+/* [귀여운 것] 밝고 화사한 분위기 */
+body.theme-cute {
+  background-color: var(--color-cute-bg);
+  color: var(--color-cute-text);
+}
+body.theme-cute #site-header {
+  background-color: rgba(255, 253, 231, 0.9);
+  border-bottom: 1px solid #f0f4c3;
+}
+body.theme-cute .nav-logo,
+body.theme-cute .nav-menu a {
+  color: var(--color-cute-text);
+}
+body.theme-cute .nav-menu a:hover,
+body.theme-cute .nav-menu a.active {
+  background-color: #f0f4c3;
+}
+
+/* [멋진 것] 어두운 밤하늘 감성 */
+body.theme-great {
+  background-color: var(--color-great-bg);
+  color: var(--color-great-text);
+}
+
+/* [노트] 실제 연노랑 종이 느낌 */
+body.theme-note {
+  background-color: var(--color-note-bg);
+  color: var(--color-note-text);
+}
+body.theme-note #site-header {
+  background-color: rgba(254, 249, 231, 0.9);
+  border-bottom: 1px solid var(--color-note-line);
+}
+body.theme-note .nav-logo,
+body.theme-note .nav-menu a {
+  color: var(--color-note-text);
+}

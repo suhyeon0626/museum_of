@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>힐링 박물관 - 멋진 것</title>
+  
+  <link rel="stylesheet" href="../css/style.css">
+  
+  <style>
+    /* ==========================================================================
+       great_things.html - 배경 이미지 매칭 & 부드러운 페이드 전환 & 하단 푸터 연동
+       ========================================================================== */
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #030613; /* 기본 배경색 */
+    }
+
+    /* [핵심] 래퍼 컨테이너: 내부 이미지의 높이에 맞춰 자동으로 전체 문서 높이가 결정됨 */
+    .scroll-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    /* 문서 흐름 내에 있는 배경 이미지 (페이드 전환을 위한 부드러운 transition 적용) */
+    .full-bg-image {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    /* 이미지 위를 정확히 덮는 오버레이 UI 레이어 (이미지 높이와 100% 일치) */
+    .overlay-ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      pointer-events: none; /* 기본적으로 클릭은 투과시키고 내부 인터랙티브 요소만 작동 */
+    }
+
+    /* 클릭 및 스크롤 상호작용이 필요한 영역만 다시 포인터 이벤트 활성화 */
+    .control-panel, 
+    #site-header, 
+    .main-content, 
+    #site-footer {
+      pointer-events: auto;
+    }
+
+    /* --------------------------------------------------------------------------
+       상단 고정 컨트롤 바 (글귀 토글 + 테마 선택)
+       -------------------------------------------------------------------------- */
+    .control-panel {
+      position: fixed;
+      top: 80px;
+      left: 20px;
+      z-index: 999;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .control-btn {
+      background-color: rgba(15, 23, 42, 0.75);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 0.55rem 1rem;
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 0.88rem;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .control-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .theme-select-group {
+      display: flex;
+      background-color: rgba(15, 23, 42, 0.65);
+      padding: 4px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    .theme-btn {
+      background: transparent;
+      border: none;
+      color: #cbd5e1;
+      padding: 0.45rem 0.9rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .theme-btn.active {
+      background-color: rgba(255, 255, 255, 0.95);
+      color: #0f172a;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .quote-toggle-btn.off {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: #94a3b8;
+    }
+
+    /* --------------------------------------------------------------------------
+       메인 콘텐츠 레이아웃 (테마 전환 시 부드럽게 흐려졌다가 나타나는 페이드 효과 부여)
+       -------------------------------------------------------------------------- */
+    .main-content {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      transition: opacity 0.4s ease-in-out;
+    }
+
+    .great-header {
+      text-align: center;
+      padding: 7rem 1rem 2rem;
+      transition: opacity 0.6s ease, transform 0.6s ease, visibility 0.6s ease;
+    }
+
+    .great-header.toggle-off {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      transform: translateY(-20px) !important;
+    }
+
+    .great-header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      transition: color 0.5s ease, text-shadow 0.5s ease;
+    }
+
+    .great-header p {
+      font-size: 1.15rem;
+      line-height: 1.8;
+      transition: color 0.5s ease, text-shadow 0.5s ease;
+    }
+
+    .cosmos-quotes-space {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      align-items: center;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1.5rem 4rem;
+      width: 100%;
+    }
+
+    /* 스크롤 페이드 인(Fade-In) 연출 스타일 */
+    .quote-floating-card {
+      text-align: center;
+      width: 100%;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 1.2s cubic-bezier(0.25, 1, 0.5, 1), 
+                  transform 1.2s cubic-bezier(0.25, 1, 0.5, 1),
+                  visibility 1.2s ease;
+    }
+
+    .quote-floating-card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .quote-floating-card.toggle-off {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      transform: translateY(20px) !important;
+    }
+
+    .quote-main-text {
+      font-size: 1.8rem;
+      line-height: 1.9;
+      font-weight: 600;
+      word-break: keep-all;
+      margin-bottom: 1rem;
+      transition: color 0.5s ease, text-shadow 0.5s ease;
+    }
+
+    .quote-sub-author {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      transition: color 0.5s ease, text-shadow 0.5s ease;
+    }
+
+    /* 푸터 영역 고정 여백 및 정렬 */
+    #site-footer {
+      padding: 2rem 0 3rem;
+      text-align: center;
+      width: 100%;
+    }
+
+
+    /* --------------------------------------------------------------------------
+       테마별 감성 텍스트 색상 및 그림자 효과 (공통 푸터 포함)
+       -------------------------------------------------------------------------- */
+    /* 🌙 [테마 1] 밤하늘 (back1) */
+    body.theme-night .great-header h1,
+    body.theme-night .quote-main-text {
+      color: #ffffff;
+      text-shadow: 0 0 15px rgba(0, 0, 0, 0.9), 0 3px 8px rgba(0, 0, 0, 0.9);
+    }
+    body.theme-night .great-header p,
+    body.theme-night .quote-sub-author,
+    body.theme-night #site-footer {
+      color: #93c5fd;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+    }
+
+    /* 🌅 [테마 2] 아침 햇살 (back2) */
+    body.theme-morning .great-header h1,
+    body.theme-morning .quote-main-text {
+      color: #1c1917;
+      text-shadow: 0 0 15px rgba(255, 255, 255, 0.9), 0 2px 5px rgba(255, 255, 255, 0.8);
+    }
+    body.theme-morning .great-header p,
+    body.theme-morning .quote-sub-author,
+    body.theme-morning #site-footer {
+      color: #9a3412;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    }
+
+    /* ☀️ [테마 3] 오후 햇살 (back3) - 하늘색 배경 대비 가독성을 높인 웜브라운/앰버 톤 */
+    body.theme-afternoon .great-header h1,
+    body.theme-afternoon .quote-main-text {
+      color: #3b1a03; 
+      text-shadow: 0 0 15px rgba(255, 255, 255, 1), 0 2px 8px rgba(255, 255, 255, 0.9);
+    }
+    body.theme-afternoon .great-header p,
+    body.theme-afternoon .quote-sub-author,
+    body.theme-afternoon #site-footer {
+      color: #9a3412; 
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.95);
+    }
+  </style>
+</head>
+
+<body class="theme-night">
+
+  <div class="scroll-wrapper">
+    
+    <img id="bg-img" class="full-bg-image" src="../images/back1.jpg" alt="감성 배경">
+
+    <div class="overlay-ui">
+      
+      <div class="control-panel">
+        <button id="quote-toggle" class="control-btn quote-toggle-btn">
+          <span id="toggle-icon">💬</span>
+          <span id="toggle-text">글귀 ON</span>
+        </button>
+
+        <div class="theme-select-group">
+          <button class="theme-btn active" data-theme="theme-night">🌙 밤하늘</button>
+          <button class="theme-btn" data-theme="theme-morning">🌅 아침 햇살</button>
+          <button class="theme-btn" data-theme="theme-afternoon">☀️ 오후 햇살</button>
+        </div>
+      </div>
+
+      <header id="site-header"></header>
+
+      <main class="main-content">
+        <section class="great-header">
+          <h1 class="page-title" id="page-title">🌌 감성 풍경 & 명언 공간</h1>
+          <p class="page-description" id="page-desc">
+            한없이 이어지는 공간을 따라 천천히 스크롤을 내려보세요.<br>
+            무한한 고요함 속에서 마음의 무게를 가볍게 비워내실 수 있습니다.
+          </p>
+        </section>
+
+        <section class="cosmos-quotes-space">
+
+          <div class="quote-floating-card">
+            <p class="quote-main-text">“어두운 밤하늘의 별들이 더 밝게 빛나는 법입니다.”</p>
+            <span class="quote-sub-author">- 힐링 메시지 -</span>
+          </div>
+
+          <div class="quote-floating-card">
+            <p class="quote-main-text">“자연은 서두르는 법이 없지만, 결국 모든 것을 이루어 낸다.”</p>
+            <span class="quote-sub-author">- 노자 -</span>
+          </div>
+
+          <div class="quote-floating-card">
+            <p class="quote-main-text">“가장 깊은 어둠 속에서도 빛은 반드시 자리를 잡습니다.”</p>
+            <span class="quote-sub-author">- 감성 노트 -</span>
+          </div>
+
+        </section>
+      </main>
+
+      <footer id="site-footer"></footer>
+
+    </div> </div> <script src="../js/header.js"></script>
+  <script src="../js/footer.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      
+      // 1. 스크롤 감지 및 부드러운 페이드 인 (IntersectionObserver)
+      const quoteCards = document.querySelectorAll('.quote-floating-card');
+      
+      const observerOptions = {
+        root: null,
+        rootMargin: '0px 0px -15% 0px', 
+        threshold: 0.1
+      };
+
+      const scrollObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, observerOptions);
+
+      quoteCards.forEach(card => scrollObserver.observe(card));
+
+
+      // 2. 글귀 ON/OFF 토글 기능 (상단 헤더 + 하단 명언 카드 동시 제어)
+      const quoteToggleBtn = document.getElementById('quote-toggle');
+      const toggleText = document.getElementById('toggle-text');
+      const toggleIcon = document.getElementById('toggle-icon');
+      const greatHeader = document.querySelector('.great-header');
+      let isQuoteOn = true;
+
+      quoteToggleBtn.addEventListener('click', () => {
+        isQuoteOn = !isQuoteOn;
+        if (isQuoteOn) {
+          quoteToggleBtn.classList.remove('off');
+          toggleIcon.textContent = '💬';
+          toggleText.textContent = '글귀 ON';
+          greatHeader.classList.remove('toggle-off');
+          quoteCards.forEach(card => card.classList.remove('toggle-off'));
+        } else {
+          quoteToggleBtn.classList.add('off');
+          toggleIcon.textContent = '🔇';
+          toggleText.textContent = '글귀 OFF';
+          greatHeader.classList.add('toggle-off');
+          quoteCards.forEach(card => card.classList.add('toggle-off'));
+        }
+      });
+
+
+      // 3. 테마 및 배경 이미지(back1, back2, back3) 연동 전환 기능 (부드러운 페이드 아웃/인 적용)
+      const themeBtns = document.querySelectorAll('.theme-btn');
+      const body = document.body;
+      const bgImg = document.getElementById('bg-img');
+      const mainContent = document.querySelector('.main-content');
+      const pageTitle = document.getElementById('page-title');
+      const pageDesc = document.getElementById('page-desc');
+
+      const themeData = {
+        'theme-night': {
+          imgSrc: '../images/back1.jpg',
+          title: '🌌 감성 풍경 & 명언 공간',
+          desc: '한없이 이어지는 공간을 따라 천천히 스크롤을 내려보세요.<br>무한한 고요함 속에서 마음의 무게를 가볍게 비워내실 수 있습니다.'
+        },
+        'theme-morning': {
+          imgSrc: '../images/back2.jpg',
+          title: '🌅 따스한 아침 햇살 공간',
+          desc: '새로운 시작을 밝히는 은은한 아침 햇살의 기운을 느껴보세요.<br>상쾌하고 따뜻한 마음으로 하루를 열어가실 수 있습니다.'
+        },
+        'theme-afternoon': {
+          imgSrc: '../images/back3.jpg',
+          title: '☀️ 찬란한 오후의 햇살 공간',
+          desc: '세상을 황금빛으로 물들이는 강렬하고 따스한 온기 속에 거닐어보세요.<br>지친 마음에 충만한 에너지를 선사합니다.'
+        }
+      };
+
+      themeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const selectedTheme = btn.getAttribute('data-theme');
+          const data = themeData[selectedTheme];
+
+          // [핵심] 테마 변경 시 먼저 흐려지게(Fade Out) 처리
+          bgImg.style.opacity = 0;
+          mainContent.style.opacity = 0;
+
+          // 투명해진 상태에서 내용물 교체 후 다시 선명해지게(Fade In) 처리
+          setTimeout(() => {
+            bgImg.src = data.imgSrc;
+            pageTitle.innerHTML = data.title;
+            pageDesc.innerHTML = data.desc;
+
+            body.classList.remove('theme-night', 'theme-morning', 'theme-afternoon');
+            body.classList.add(selectedTheme);
+
+            themeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // 선명하게 나타나기 (Fade In)
+            bgImg.style.opacity = 1;
+            mainContent.style.opacity = 1;
+          }, 350);
+        });
+      });
+
+    });
+  </script>
+</body>
+</html>

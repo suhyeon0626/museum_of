@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>힐링 박물관 - 감정 노트</title>
+  
+  <link rel="stylesheet" href="../css/style.css">
+  
+  <style>
+    /* ==========================================================================
+       feeling_note.html 전용 내부 스타일 (연노랑 종이 노트 UI, 캔버스, 사라지는 연출)
+       ========================================================================== */
+
+    .note-intro {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    /* [기획서 반영] 실제 연노랑 종이 질감의 노트 메인 컨테이너 */
+    .notebook-paper {
+      position: relative;
+      background-color: var(--color-note-bg);
+      border: 2px solid var(--color-note-line);
+      border-radius: 12px;
+      max-width: 780px;
+      margin: 0 auto 3rem;
+      padding: 2.5rem 2rem 2rem;
+      box-shadow: 0 10px 25px rgba(180, 160, 120, 0.25), 
+                  inset 0 0 40px rgba(0, 0, 0, 0.02);
+      overflow: hidden;
+    }
+
+    /* 상단 스프링 링 바인더 장식 */
+    .notebook-binder {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 16px;
+    }
+
+    .binder-ring {
+      width: 14px;
+      height: 14px;
+      background: #d4cbb3;
+      border-radius: 50%;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* 작성 도구 툴바 (글쓰기 / 그림그리기 탭) */
+    .tool-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px dashed var(--color-note-line);
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    .mode-switch {
+      display: flex;
+      gap: 8px;
+    }
+
+    .tool-tab {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--color-note-line);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: bold;
+      color: var(--color-note-text);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tool-tab.active {
+      background: #8d6e63;
+      color: #ffffff;
+      border-color: #8d6e63;
+    }
+
+    .draw-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .color-picker {
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      background: transparent;
+    }
+
+    /* [기획서 반영] 무지 노트 작성 공간 */
+    .workspace {
+      position: relative;
+      min-height: 320px;
+      background-color: #fffdf5;
+      border: 1px solid var(--color-note-line);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    /* 1. 텍스트 작성창 */
+    #note-textarea {
+      width: 100%;
+      height: 320px;
+      padding: 1.5rem;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #333;
+      resize: none;
+      outline: none;
+      display: block;
+    }
+
+    /* 2. 그림 그리기 캔버스 */
+    #drawing-canvas {
+      width: 100%;
+      height: 320px;
+      display: none;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    /* 하단 실행 및 사라짐 컨트롤 버튼 */
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .clear-btn {
+      background: transparent;
+      border: 1px solid #c8bda3;
+      color: #795548;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s ease;
+    }
+
+    .clear-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .disappear-btn {
+      background-color: #8d6e63;
+      color: #ffffff;
+      border: none;
+      padding: 0.8rem 1.8rem;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(141, 110, 99, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .disappear-btn:hover {
+      background-color: #6d4c41;
+      transform: translateY(-2px);
+    }
+
+    /* --------------------------------------------------------------------------
+       [핵심 기능 ②] 글/그림이 멋지게 날아가며 사라지는 애니메이션 효과
+       -------------------------------------------------------------------------- */
+    .workspace.disappearing {
+      animation: floatAndDissolve 1.6s ease-in-out forwards;
+    }
+
+    @keyframes floatAndDissolve {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotate(0deg);
+        filter: blur(0px);
+      }
+      50% {
+        opacity: 0.6;
+        transform: translateY(-30px) scale(0.95) rotate(2deg);
+        filter: blur(2px);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-80px) scale(0.7) rotate(-4deg);
+        filter: blur(8px);
+      }
+    }
+
+    /* 완료 알림 메시지 패널 */
+    .success-message {
+      display: none;
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: #4e342e;
+    }
+
+    .success-message.show {
+      display: block;
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="theme-note">
+
+  <header id="site-header"></header>
+
+  <main>
+    <section class="note-intro">
+      <h1 class="page-title">📝 마음 정리 감정 노트</h1>
+      <p class="page-description">
+        오늘 하루 나를 괴롭혔던 모든 스트레스와 복잡한 생각들을 적거나 그려보세요.<br>
+        하단의 버튼을 누르면 모든 마음의 짐이 하늘로 부드럽게 날아가 사라집니다.
+      </p>
+    </section>
+
+    <div class="notebook-paper">
+      <div class="notebook-binder">
+        <div class="binder-ring"></div>
+        <div class="binder-ring"></div>
+        <div class="binder-ring"></div>
+        <div class="binder-ring"></div>
+        <div class="binder-ring"></div>
+      </div>
+
+      <div class="tool-bar">
+        <div class="mode-switch">
+          <button class="tool-tab active" id="tab-text">✍️ 글 쓰기</button>
+          <button class="tool-tab" id="tab-draw">🎨 그림 그리기</button>
+        </div>
+
+        <div class="draw-controls" id="draw-controls" style="display: none;">
+          <label style="font-size: 0.85rem; color:#5d4037;">색상:</label>
+          <input type="color" id="pen-color" class="color-picker" value="#4e342e">
+        </div>
+      </div>
+
+      <div class="workspace" id="workspace">
+        <textarea id="note-textarea" placeholder="이곳에 오늘 당신의 마음을 솔직하게 적어보세요..."></textarea>
+        <canvas id="drawing-canvas"></canvas>
+      </div>
+
+      <div class="action-bar" id="action-bar">
+        <button class="clear-btn" id="clear-btn">🗑️ 지우기</button>
+        <button class="disappear-btn" id="disappear-btn">✨ 스트레스 날려 보내기</button>
+      </div>
+
+      <div class="success-message" id="success-message">
+        <h2 style="font-size: 1.6rem; margin-bottom: 0.6rem;">🍃 수고하셨습니다</h2>
+        <p style="font-size: 1.05rem; line-height: 1.6; color: #6d4c41;">
+          작성하신 스트레스와 감정이 바람에 흔적 없이 날아갔습니다.<br>
+          이제 가벼워진 마음으로 편안한 시간 보내세요!
+        </p>
+        <button class="disappear-btn" id="reset-btn" style="margin-top: 1.5rem;">✨ 새로 적기</button>
+      </div>
+    </div>
+  </main>
+
+  <footer id="site-footer"></footer>
+
+  <script src="../js/header.js"></script>
+  <script src="../js/footer.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // DOM 요소를 가져옵니다.
+      const tabText = document.getElementById('tab-text');
+      const tabDraw = document.getElementById('tab-draw');
+      const textarea = document.getElementById('note-textarea');
+      const canvas = document.getElementById('drawing-canvas');
+      const drawControls = document.getElementById('draw-controls');
+      const penColorInput = document.getElementById('pen-color');
+      const workspace = document.getElementById('workspace');
+      const actionBar = document.getElementById('action-bar');
+      const disappearBtn = document.getElementById('disappear-btn');
+      const clearBtn = document.getElementById('clear-btn');
+      const successMessage = document.getElementById('success-message');
+      const resetBtn = document.getElementById('reset-btn');
+
+      let currentMode = 'text'; // 'text' 또는 'draw'
+      let isDrawing = false;
+      const ctx = canvas.getContext('2d');
+
+      // 캔버스 크기를 무지 영역 크기에 맞춤
+      function resizeCanvas() {
+        canvas.width = workspace.clientWidth;
+        canvas.height = workspace.clientHeight;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = penColorInput.value;
+      }
+      resizeCanvas();
+
+      // 1. 모드 전환 (글 쓰기 vs 그림 그리기)
+      tabText.addEventListener('click', () => {
+        currentMode = 'text';
+        tabText.classList.add('active');
+        tabDraw.classList.remove('active');
+        textarea.style.display = 'block';
+        canvas.style.display = 'none';
+        drawControls.style.display = 'none';
+      });
+
+      tabDraw.addEventListener('click', () => {
+        currentMode = 'draw';
+        tabDraw.classList.add('active');
+        tabText.classList.remove('active');
+        textarea.style.display = 'none';
+        canvas.style.display = 'block';
+        drawControls.style.display = 'flex';
+        resizeCanvas();
+      });
+
+      // 2. 캔버스 그림 그리기 이벤트 처리
+      penColorInput.addEventListener('change', (e) => {
+        ctx.strokeStyle = e.target.value;
+      });
+
+      function startDrawing(e) {
+        if (currentMode !== 'draw') return;
+        isDrawing = true;
+        ctx.beginPath();
+        const rect = canvas.getBoundingClientRect();
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+      }
+
+      function draw(e) {
+        if (!isDrawing || currentMode !== 'draw') return;
+        const rect = canvas.getBoundingClientRect();
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.stroke();
+      }
+
+      function stopDrawing() {
+        isDrawing = false;
+      }
+
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDrawing);
+      canvas.addEventListener('mouseleave', stopDrawing);
+
+      // 3. 지우기 버튼 클릭
+      clearBtn.addEventListener('click', () => {
+        if (currentMode === 'text') {
+          textarea.value = '';
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      });
+
+      // 4. [핵심 기능 ②] '스트레스 날려 보내기' 버튼 클릭 시 사라지는 연출
+      disappearBtn.addEventListener('click', () => {
+        // 내용 작성 여부 확인
+        const hasText = textarea.value.trim().length > 0;
+        // 간단한 캔버스 작성 여부 체크
+        if (currentMode === 'text' && !hasText) {
+          alert('지워버리고 싶은 마음이나 스트레스를 먼저 작성해주세요!');
+          return;
+        }
+
+        // 애니메이션 클래스 추가 (부드럽게 날아가며 퍼짐)
+        workspace.classList.add('disappearing');
+
+        // 애니메이션 완료 후 실행
+        setTimeout(() => {
+          workspace.style.display = 'none';
+          actionBar.style.display = 'none';
+          drawControls.style.display = 'none';
+          successMessage.classList.add('show');
+        }, 1500);
+      });
+
+      // 5. 새로 적기 (리셋) 버튼 처리
+      resetBtn.addEventListener('click', () => {
+        textarea.value = '';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        workspace.classList.remove('disappearing');
+        workspace.style.display = 'block';
+        actionBar.style.display = 'flex';
+        successMessage.classList.remove('show');
+        
+        // 글 쓰기 모드로 복귀
+        tabText.click();
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>힐링 박물관 - 귀여운 것</title>
+  
+  <link rel="stylesheet" href="../css/style.css">
+  
+  <style>
+    /* ==========================================================================
+       cute_things.html - 불규칙 고양이 배치 & 하단 선택 버튼 스타일
+       ========================================================================== */
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    .cute-intro {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding-top: 2rem;
+    }
+
+    /* 불규칙한(Masonry/Staggered) 레이아웃 스타일 */
+    .irregular-gallery {
+      column-count: 3;
+      column-gap: 2rem;
+      max-width: 1100px;
+      margin: 0 auto 4rem;
+      padding: 0 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .irregular-gallery { column-count: 2; }
+    }
+    @media (max-width: 600px) {
+      .irregular-gallery { column-count: 1; }
+    }
+
+    .cat-item {
+      break-inside: avoid;
+      margin-bottom: 2.5rem;
+      position: relative;
+      background: #ffffff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      border: 2px solid #f0f4c3;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    /* 불규칙한 느낌을 강조하기 위한 오프셋 마진 및 회전 효과 */
+    .cat-item:nth-child(odd) {
+      transform: rotate(-1.5deg);
+      margin-top: 1rem;
+    }
+    .cat-item:nth-child(even) {
+      transform: rotate(1.5deg);
+    }
+    .cat-item:nth-child(3n) {
+      transform: translateY(15px);
+    }
+
+    .cat-item:hover {
+      transform: scale(1.03) rotate(0deg) !important;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+      z-index: 10;
+    }
+
+    .cat-item.is-first {
+      border: 4px solid #c0ca33;
+      box-shadow: 0 0 25px rgba(192, 202, 51, 0.6);
+    }
+
+    .cat-img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    /* 이미지마다 높이를 다르게 적용하여 불규칙성 부여 */
+    .cat-item:nth-child(3n+1) .cat-img { height: 260px; }
+    .cat-item:nth-child(3n+2) .cat-img { height: 340px; }
+    .cat-item:nth-child(3n) .cat-img { height: 220px; }
+
+    /* cat15 사진 전용 위쪽 정렬 스타일 */
+    .cat-item img.align-top {
+      object-position: top center !important;
+    }
+
+    .cat-caption {
+      padding: 0.8rem;
+      text-align: center;
+      font-weight: bold;
+      color: #333;
+      background: #fafbe4;
+    }
+
+    /* 선택 모드 알림 오버레이 */
+    .select-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(192, 202, 51, 0.85);
+      color: #1b5e20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    body.selection-mode .select-overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* 스크롤 하단 '자신의 고양이를 선택하세요!' 버튼 영역 */
+    .bottom-select-section {
+      text-align: center;
+      padding: 3rem 1rem 5rem;
+    }
+
+    .select-trigger-btn {
+      background-color: #c0ca33;
+      color: #2e7d32;
+      border: none;
+      padding: 1.2rem 2.8rem;
+      font-size: 1.3rem;
+      font-weight: 800;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(192, 202, 51, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .select-trigger-btn:hover {
+      background-color: #afb42b;
+      color: #ffffff;
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 12px 25px rgba(192, 202, 51, 0.6);
+    }
+
+    /* --------------------------------------------------------------------------
+       [요청 반영] 선택한 고양이만 더 크고 역동적으로 뛰어다니는 애니메이션
+       -------------------------------------------------------------------------- */
+    #running-cat-container {
+      position: fixed;
+      bottom: 10px;
+      left: 0;
+      z-index: 999;
+      pointer-events: none;
+      display: none;
+      align-items: center;
+      /* 좌우 위치와 방향 전환은 JS에서 transform으로 직접 제어합니다 */
+    }
+
+    #running-cat-container.active {
+      display: flex;
+    }
+
+    .runner-img-box {
+      width: 110px;  /* 기존보다 더 커진 고양이 사진 크기 */
+      height: 110px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 4px solid #c0ca33;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+      /* 종종걸음(뽈뽈뽈) 느낌을 주는 작은 바운스 효과 */
+      animation: catBounceDynamic 0.32s ease-in-out infinite alternate;
+    }
+
+    .runner-img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* cat15 선택 시 하단 달리기에서도 잘리지 않도록 상단 정렬 적용 */
+    .runner-img-box img.align-top {
+      object-position: top center !important;
+    }
+
+    @keyframes catBounceDynamic {
+      0% { transform: translateY(0) rotate(-5deg) scale(1); }
+      100% { transform: translateY(-8px) rotate(5deg) scale(1.04); }
+    }
+  </style>
+</head>
+<body class="theme-cute">
+
+  <header id="site-header"></header>
+
+  <main>
+    <section class="cute-intro">
+      <h1 class="page-title">🐱 자유로운 고양이 세상</h1>
+      <p class="page-description">
+        스크롤을 내려 여러 공간에 자유롭게 위치한 고양이들을 감상해보세요.<br>
+        맨 아래까지 내린 후 <b>'자신의 고양이를 선택하세요!'</b> 버튼을 누르면 1위 고양이를 뽑을 수 있습니다!
+      </p>
+    </section>
+
+    <section class="irregular-gallery" id="gallery-container"></section>
+
+    <section class="bottom-select-section">
+      <button class="select-trigger-btn" id="select-trigger-btn">
+        🐾 자신의 고양이를 선택하세요!
+      </button>
+    </section>
+  </main>
+
+  <div id="running-cat-container">
+    <div class="runner-img-box">
+      <img id="runner-img" src="" alt="1위 고양이">
+    </div>
+  </div>
+
+  <footer id="site-footer"></footer>
+
+  <script src="../js/header.js"></script>
+  <script src="../js/footer.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const galleryContainer = document.getElementById('gallery-container');
+      const selectTriggerBtn = document.getElementById('select-trigger-btn');
+      const runnerContainer = document.getElementById('running-cat-container');
+      const runnerImg = document.getElementById('runner-img');
+
+      const totalCats = 15;
+      let isSelectionMode = false;
+
+      // 고양이별 간단한 설명 (랜덤으로 부여)
+      const catDescriptions = [
+        '낼름 고양이',
+        '지친 고양이',
+        '매우 행복한 고양이',
+        '째릿 고양이',
+        '뭐 고양이',
+        ':3',
+        '물틀지마 고양이',
+        '간식 기다리는 고양이',
+        '가까운 고양이',
+        '야옹 고양이',
+        '집중 고양이',
+        '귀여운 고양이',
+        '앉아! 고양이',
+        '예쁜 고양이',
+        '<고양이>'
+      ];
+
+      // 하단 뽈뽈뽈 걷는 고양이 상태값
+      let runnerX = 0;
+      let runnerDir = 1; // 1: 오른쪽으로, -1: 왼쪽으로
+      const runnerSpeed = 0.6; // px/frame (느리게 뽈뽈뽈 걷는 속도)
+      let runnerAnimId = null;
+
+      function stepRunner() {
+        const boxWidth = runnerContainer.offsetWidth || 110;
+        const maxX = window.innerWidth - boxWidth;
+
+        runnerX += runnerSpeed * runnerDir;
+
+        // 벽(화면 좌우 끝)에 닿으면 방향을 반대로 바꿔서 되돌아감
+        if (runnerX >= maxX) {
+          runnerX = maxX;
+          runnerDir = -1;
+        } else if (runnerX <= 0) {
+          runnerX = 0;
+          runnerDir = 1;
+        }
+
+        // 이동 방향에 맞춰 좌우 반전 (오른쪽 걸을 땐 원본, 왼쪽 걸을 땐 반전)
+        const flip = runnerDir === 1 ? 1 : -1;
+        runnerContainer.style.transform = `translateX(${runnerX}px) scaleX(${flip})`;
+
+        runnerAnimId = requestAnimationFrame(stepRunner);
+      }
+
+      function startRunner() {
+        if (runnerAnimId) cancelAnimationFrame(runnerAnimId);
+        runnerX = 0;
+        runnerDir = 1;
+        runnerContainer.style.transform = `translateX(0px) scaleX(1)`;
+        runnerAnimId = requestAnimationFrame(stepRunner);
+      }
+
+      // 15개 고양이 불규칙 카드 생성
+      for (let i = 1; i <= totalCats; i++) {
+        const catItem = document.createElement('div');
+        catItem.className = 'cat-item';
+        catItem.dataset.id = i;
+
+        // cat15인 경우 상단 정렬 클래스 지정
+        const imgClass = (i === 15) ? 'cat-img align-top' : 'cat-img';
+
+        const catDesc = catDescriptions[i - 1];
+
+        catItem.innerHTML = `
+          <img class="${imgClass}" src="../images/cat${i}.jpg" alt="${catDesc}" onerror="this.src='https://via.placeholder.com/300x300?text=Cat+${i}'">
+          <div class="cat-caption">🐾 ${catDesc}</div>
+          <div class="select-overlay">
+            <span>🥇 1위로 선택하기</span>
+          </div>
+        `;
+
+        // 카드 클릭 시 1위 선택 이벤트
+        catItem.addEventListener('click', () => {
+          if (!isSelectionMode) {
+            alert("스크롤을 끝까지 내려 하단의 '자신의 고양이를 선택하세요!' 버튼을 먼저 눌러주세요!");
+            return;
+          }
+
+          // 1위 강조
+          document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('is-first'));
+          catItem.classList.add('is-first');
+
+          // 선택 모드 종료 및 하단 애니메이션 시작 (선택한 고양이 이미지 적용 및 상단 정렬 클래스 연동)
+          document.body.classList.remove('selection-mode');
+          isSelectionMode = false;
+
+          runnerImg.src = `../images/cat${i}.jpg`;
+          if (i === 15) {
+            runnerImg.className = 'align-top';
+          } else {
+            runnerImg.className = '';
+          }
+
+          runnerContainer.classList.add('active');
+          startRunner();
+
+          alert(`✨ '${catDesc}'가 당신의 1위 고양이로 선택되었습니다! 화면 하단을 확인해보세요.`);
+        });
+
+        galleryContainer.appendChild(catItem);
+      }
+
+      // 하단 버튼 클릭 시 선택 모드 활성화 및 상단으로 부드러운 안내
+      selectTriggerBtn.addEventListener('click', () => {
+        isSelectionMode = true;
+        document.body.classList.add('selection-mode');
+        alert("✨ 고양이 선택 모드가 활성화되었습니다! 가장 마음에 드는 고양이 사진을 클릭해주세요.");
+        
+        // 고양이들이 모여 있는 곳으로 스크롤 이동
+        galleryContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+  </script>
+</body>
+</html>

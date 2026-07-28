@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>힐링 박물관 - 메인</title>
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    /* ==========================================================================
+       index.html - 긴 스크롤 메인 페이지
+       연노랑(베이지) -> 하늘색 -> 어두운 남색으로 이어지는 배경 그라데이션
+       ========================================================================== */
+
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+
+    /* [핵심] body 전체 높이를 기준으로 흐르는 단일 그라데이션.
+       섹션이 늘어나거나 줄어도 색이 항상 처음부터 끝까지 자연스럽게 이어짐 */
+    body.theme-home {
+      background: linear-gradient(
+        180deg,
+        #fef9e7 0%,
+        #fff3c4 18%,
+        #cdeafe 40%,
+        #7fb2e5 58%,
+        #2a4d7a 78%,
+        #0b132b 100%
+      );
+      background-attachment: initial;
+      transition: none;
+    }
+
+    /* 헤더는 살짝 투명한 흰 배경으로, 어느 구간에서도 메뉴가 잘 보이도록 처리 */
+    body.theme-home #site-header {
+      background-color: rgba(255, 255, 255, 0.55);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    body.theme-home #site-header .nav-logo,
+    body.theme-home #site-header .nav-menu a {
+      color: #2e2a1f;
+    }
+    body.theme-home #site-header .nav-menu a:hover,
+    body.theme-home #site-header .nav-menu a.active {
+      background-color: rgba(0, 0, 0, 0.08);
+    }
+
+    main {
+      max-width: 100%;
+      padding: 0;
+    }
+
+    .home-section {
+      min-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 1.5rem;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 1s cubic-bezier(0.25, 1, 0.5, 1),
+                  transform 1s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .home-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* --------------------------------------------------------------------------
+       1. Hero: 제목 + 사이트 설명 (베이지 구간 - 어두운 글씨)
+       -------------------------------------------------------------------------- */
+    .hero-section {
+      color: #3a3220;
+    }
+
+    .hero-section .site-title {
+      font-size: 3rem;
+      margin-bottom: 1.2rem;
+      letter-spacing: 1px;
+    }
+
+    .hero-section .site-desc {
+      max-width: 640px;
+      font-size: 1.15rem;
+      line-height: 1.9;
+      opacity: 0.9;
+    }
+
+    .scroll-cue {
+      margin-top: 3rem;
+      font-size: 0.95rem;
+      opacity: 0.65;
+      animation: bounceDown 2s ease-in-out infinite;
+    }
+
+    @keyframes bounceDown {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(10px); }
+    }
+
+    /* --------------------------------------------------------------------------
+       2~4. 페이지 소개 카드 공통 스타일
+       -------------------------------------------------------------------------- */
+    .feature-section {
+      gap: 1.4rem;
+    }
+
+    .feature-emoji {
+      font-size: 3.2rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .feature-title {
+      font-size: 2.1rem;
+      font-weight: 800;
+      margin-bottom: 0.4rem;
+    }
+
+    .feature-desc {
+      max-width: 560px;
+      font-size: 1.08rem;
+      line-height: 1.85;
+      margin-bottom: 1.8rem;
+    }
+
+    .feature-link {
+      display: inline-block;
+      padding: 0.85rem 2.2rem;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .feature-link:hover {
+      transform: translateY(-3px);
+    }
+
+    /* 밝은 구간 (귀여운 것 소개) - 어두운 글씨, 톤은 연두/노랑 */
+    .cute-preview {
+      color: #3a3220;
+    }
+    .cute-preview .feature-link {
+      background-color: #c0ca33;
+      color: #2e7d32;
+    }
+    .cute-preview .feature-link:hover {
+      background-color: #afb42b;
+      color: #ffffff;
+    }
+
+    /* 중간~어두운 구간 (멋진 것 소개) - 밝은 글씨 */
+    .great-preview {
+      color: #eef2f9;
+    }
+    .great-preview .feature-title,
+    .great-preview .feature-emoji {
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+    }
+    .great-preview .feature-link {
+      background-color: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(6px);
+    }
+    .great-preview .feature-link:hover {
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #0f172a;
+    }
+
+    /* 가장 어두운 구간 (노트 소개) - 밝은 글씨, 톤은 브라운/베이지 포인트 */
+    .note-preview {
+      color: #e7e2d3;
+    }
+    .note-preview .feature-link {
+      background-color: #d7c9a3;
+      color: #4e342e;
+    }
+    .note-preview .feature-link:hover {
+      background-color: #c8b88a;
+      color: #2a1f19;
+    }
+
+    body.theme-home #site-footer {
+      background-color: rgba(0, 0, 0, 0.35);
+      color: #b9c2d8;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body class="theme-home">
+
+  <header id="site-header"></header>
+
+  <main>
+    <section class="home-section hero-section" id="section-hero">
+      <h1 class="site-title">🌿 힐링 박물관</h1>
+      <p class="site-desc">
+        공부와 일상에서 쌓인 스트레스, 잠깐 내려놓고 가세요.<br>
+        눈으로 보고, 마음으로 느끼는 작은 힐링의 순간들을 모아둔 공간입니다.<br>
+        천천히 스크롤을 내리며, 이 곳에 어떤 것들이 있는지 함께 둘러볼까요?
+      </p>
+      <div class="scroll-cue">⌄ 아래로 스크롤 ⌄</div>
+    </section>
+
+    <section class="home-section feature-section cute-preview" id="section-cute">
+      <div class="feature-emoji">🐱</div>
+      <h2 class="feature-title">귀여운 것</h2>
+      <p class="feature-desc">
+        사랑스러운 고양이들을 마음껏 구경하고, 가장 마음에 드는 한 마리를<br>
+        1위로 선택해보세요. 선택된 고양이는 화면 하단을 뽈뽈뽈 돌아다녀요.
+      </p>
+      <a class="feature-link" href="pages/cute_things.html">고양이 보러 가기 →</a>
+    </section>
+
+    <section class="home-section feature-section great-preview" id="section-great">
+      <div class="feature-emoji">🌌</div>
+      <h2 class="feature-title">멋진 것</h2>
+      <p class="feature-desc">
+        끝없이 이어지는 스크롤을 따라 아름다운 풍경과 감성 글귀를 만나보세요.<br>
+        왼쪽 상단 버튼으로 글귀를 켜고 끄며, 세 가지 분위기의 하늘을 골라볼 수 있어요.
+      </p>
+      <a class="feature-link" href="pages/great_things.html">풍경 보러 가기 →</a>
+    </section>
+
+    <section class="home-section feature-section note-preview" id="section-note">
+      <div class="feature-emoji">📝</div>
+      <h2 class="feature-title">노트</h2>
+      <p class="feature-desc">
+        오늘 하루 나를 힘들게 한 생각들을 글로 적거나 그림으로 그려보세요.<br>
+        다 적은 후 버튼 하나로, 그 마음이 부드럽게 하늘로 날아가 사라집니다.
+      </p>
+      <a class="feature-link" href="pages/feeling_note.html">마음 적으러 가기 →</a>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+
+  <script src="js/header.js"></script>
+  <script src="js/footer.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const sections = document.querySelectorAll('.home-section');
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { root: null, rootMargin: '0px 0px -10% 0px', threshold: 0.15 });
+
+      sections.forEach(section => observer.observe(section));
+
+      // 히어로 섹션은 페이지 진입 시 바로 보이도록 처리
+      document.getElementById('section-hero').classList.add('visible');
+    });
+  </script>
+</body>
+</html>
